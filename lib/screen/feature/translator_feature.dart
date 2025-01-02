@@ -21,109 +21,228 @@ class _TranslatorFeatureState extends State<TranslatorFeature> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      //app bar
       appBar: AppBar(
-        title: const Text('Multi Language Translator'),
+        elevation: 0,
+        backgroundColor: Colors.transparent,
+        title: Text(
+          'Language Translator',
+          style: TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+            color: isDark ? Colors.white : Theme.of(context).primaryColor,
+          ),
+        ),
       ),
 
-      //body
-      body: ListView(
+      body: SingleChildScrollView(
         physics: const BouncingScrollPhysics(),
-        padding: EdgeInsets.only(top: mq.height * .02, bottom: mq.height * .1),
-        children: [
-          Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-            //from language
-            InkWell(
-              onTap: () => Get.bottomSheet(LanguageSheet(c: _c, s: _c.from)),
-              borderRadius: const BorderRadius.all(Radius.circular(15)),
-              child: Container(
-                height: 50,
-                width: mq.width * .4,
-                alignment: Alignment.center,
+        child: Padding(
+          padding: EdgeInsets.all(mq.width * .04),
+          child: Column(
+            children: [
+              // Language Selection Cards
+              Container(
+                padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                    border: Border.all(color: Colors.blue),
-                    borderRadius: const BorderRadius.all(Radius.circular(15))),
-                child:
-                    Obx(() => Text(_c.from.isEmpty ? 'Auto' : _c.from.value)),
-              ),
-            ),
+                  color: isDark ? Colors.grey[800] : Colors.grey[100],
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 10,
+                      offset: const Offset(0, 5),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    // From Language
+                    Expanded(
+                      child: InkWell(
+                        onTap: () => Get.bottomSheet(LanguageSheet(c: _c, s: _c.from)),
+                        child: Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: isDark ? Colors.grey[700] : Colors.white,
+                            borderRadius: BorderRadius.circular(15),
+                            border: Border.all(
+                              color: Theme.of(context).primaryColor.withOpacity(0.3),
+                            ),
+                          ),
+                          child: Obx(() => Text(
+                            _c.from.isEmpty ? 'Auto' : _c.from.value,
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                              color: isDark ? Colors.white : Colors.black87,
+                            ),
+                          )),
+                        ),
+                      ),
+                    ),
 
-            //swipe language btn
-            IconButton(
-                onPressed: _c.swapLanguages,
-                icon: Obx(
-                  () => Icon(
-                    CupertinoIcons.repeat,
-                    color: _c.to.isNotEmpty && _c.from.isNotEmpty
-                        ? Colors.blue
-                        : Colors.grey,
+                    // Swap Button
+                    Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 10),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).primaryColor.withOpacity(0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: IconButton(
+                        onPressed: _c.swapLanguages,
+                        icon: Obx(() => Icon(
+                          Icons.swap_horiz_rounded,
+                          color: _c.to.isNotEmpty && _c.from.isNotEmpty
+                              ? Theme.of(context).primaryColor
+                              : Colors.grey,
+                          size: 28,
+                        )),
+                      ),
+                    ),
+
+                    // To Language
+                    Expanded(
+                      child: InkWell(
+                        onTap: () => Get.bottomSheet(LanguageSheet(c: _c, s: _c.to)),
+                        child: Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: isDark ? Colors.grey[700] : Colors.white,
+                            borderRadius: BorderRadius.circular(15),
+                            border: Border.all(
+                              color: Theme.of(context).primaryColor.withOpacity(0.3),
+                            ),
+                          ),
+                          child: Obx(() => Text(
+                            _c.to.isEmpty ? 'Select' : _c.to.value,
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                              color: isDark ? Colors.white : Colors.black87,
+                            ),
+                          )),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 20),
+
+              // Input Text Field
+              Container(
+                decoration: BoxDecoration(
+                  color: isDark ? Colors.grey[800] : Colors.grey[100],
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 10,
+                      offset: const Offset(0, 5),
+                    ),
+                  ],
+                ),
+                child: TextFormField(
+                  controller: _c.textC,
+                  minLines: 5,
+                  maxLines: 8,
+                  style: TextStyle(
+                    color: isDark ? Colors.white : Colors.black87,
                   ),
-                )),
-
-            //to language
-            InkWell(
-              onTap: () => Get.bottomSheet(LanguageSheet(c: _c, s: _c.to)),
-              borderRadius: const BorderRadius.all(Radius.circular(15)),
-              child: Container(
-                height: 50,
-                width: mq.width * .4,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                    border: Border.all(color: Colors.blue),
-                    borderRadius: const BorderRadius.all(Radius.circular(15))),
-                child: Obx(() => Text(_c.to.isEmpty ? 'To' : _c.to.value)),
+                  decoration: InputDecoration(
+                    hintText: 'Enter text to translate...',
+                    hintStyle: TextStyle(color: Colors.grey.shade400),
+                    border: InputBorder.none,
+                    contentPadding: const EdgeInsets.all(20),
+                  ),
+                ),
               ),
-            ),
-          ]),
 
-          //text field
-          Padding(
-            padding: EdgeInsets.symmetric(
-                horizontal: mq.width * .04, vertical: mq.height * .035),
-            child: TextFormField(
-              controller: _c.textC,
-              minLines: 5,
-              maxLines: null,
-              onTapOutside: (e) => FocusScope.of(context).unfocus(),
-              decoration: const InputDecoration(
-                  hintText: 'Translate anything you want...',
-                  hintStyle: TextStyle(fontSize: 13.5),
-                  border: OutlineInputBorder(
-                      borderRadius: BorderRadius.all(Radius.circular(10)))),
-            ),
+              const SizedBox(height: 20),
+
+              // Translation Result
+              Obx(() => switch (_c.status.value) {
+                Status.none => const SizedBox(),
+                Status.loading => Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(20),
+                    child: CustomLoading(),
+                  ),
+                ),
+                Status.complete => Container(
+                  decoration: BoxDecoration(
+                    color: isDark ? Colors.grey[800] : Colors.grey[100],
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.05),
+                        blurRadius: 10,
+                        offset: const Offset(0, 5),
+                      ),
+                    ],
+                  ),
+                  child: TextFormField(
+                    controller: _c.resultC,
+                    minLines: 5,
+                    maxLines: 8,
+                    style: TextStyle(
+                      color: isDark ? Colors.white : Colors.black87,
+                    ),
+                    decoration: InputDecoration(
+                      border: InputBorder.none,
+                      contentPadding: const EdgeInsets.all(20),
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          Icons.copy_rounded,
+                          color: Theme.of(context).primaryColor,
+                        ),
+                        onPressed: () {
+                          // Add copy functionality
+                        },
+                      ),
+                    ),
+                  ),
+                ),
+              }),
+
+              const SizedBox(height: 20),
+
+              // Translate Button
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: _c.googleTranslate,
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 15),
+                    backgroundColor: Theme.of(context).primaryColor,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(15),
+                    ),
+                    elevation: 5,
+                    shadowColor: Theme.of(context).primaryColor.withOpacity(0.5),
+                  ),
+                  child: Text(
+                    'Translate',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
-
-          //result field
-          Obx(() => _translateResult()),
-
-          //for adding some space
-          SizedBox(height: mq.height * .04),
-
-          //translate btn
-          CustomBtn(
-            onTap: _c.googleTranslate,
-            // onTap: _c.translate,
-            text: 'Translate',
-          )
-        ],
+        ),
       ),
     );
   }
-
-  Widget _translateResult() => switch (_c.status.value) {
-        Status.none => const SizedBox(),
-        Status.complete => Padding(
-            padding: EdgeInsets.symmetric(horizontal: mq.width * .04),
-            child: TextFormField(
-              controller: _c.resultC,
-              maxLines: null,
-              onTapOutside: (e) => FocusScope.of(context).unfocus(),
-              decoration: const InputDecoration(
-                  border: OutlineInputBorder(
-                      borderRadius: BorderRadius.all(Radius.circular(10)))),
-            ),
-          ),
-        Status.loading => const Align(child: CustomLoading())
-      };
 }

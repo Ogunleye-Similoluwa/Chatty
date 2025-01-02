@@ -11,21 +11,21 @@ class ChatController extends GetxController {
   final scrollC = ScrollController();
 
   final list = <Message>[
-    Message(msg: 'Hello, How can I help you?', msgType: MessageType.bot)
+    Message(msg: 'Hello, How can I help you?', type: MessageType.bot)
   ].obs;
 
   Future<void> askQuestion() async {
     if (textC.text.trim().isNotEmpty) {
       //user
-      list.add(Message(msg: textC.text, msgType: MessageType.user));
-      list.add(Message(msg: '', msgType: MessageType.bot));
+      list.add(Message(msg: textC.text, type: MessageType.user));
+      list.add(Message(msg: '', type: MessageType.bot));
       _scrollDown();
 
       final res = await APIs.getAnswer(textC.text);
 
       //ai bot
       list.removeLast();
-      list.add(Message(msg: res, msgType: MessageType.bot));
+      list.add(Message(msg: res, type: MessageType.bot));
       _scrollDown();
 
       textC.text = '';

@@ -1,8 +1,11 @@
-class Message {
-  String msg;
-  final MessageType msgType;
-
-  Message({required this.msg, required this.msgType});
-}
-
 enum MessageType { user, bot }
+
+class Message {
+  final String msg;
+  final MessageType type;
+
+  Message({
+    required this.msg,
+    required this.type,
+  });
+}
