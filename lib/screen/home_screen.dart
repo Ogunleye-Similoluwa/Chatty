@@ -8,6 +8,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:translator_plus/translator_plus.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:google_ml_kit/google_ml_kit.dart';
+import 'package:rive/rive.dart' as rive;
 import 'dart:io';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:animated_text_kit/animated_text_kit.dart';
@@ -189,7 +190,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'AI Assistant',
+              'Chatty',
               style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                 color: Colors.white,
                 fontWeight: FontWeight.bold,
@@ -262,22 +263,22 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         delegate: SliverChildListDelegate([
           _buildAnimatedFeatureCard(
             'Image Analysis',
-            'https://assets5.lottiefiles.com/packages/lf20_yom6uvgj.json',
+            'assets/rive/ai_art.riv',
             _processImage,
           ),
           _buildAnimatedFeatureCard(
             'Translation',
-            'https://assets5.lottiefiles.com/private_files/lf30_P2uXE5.json',
+            'assets/rive/translate.riv',
             _showTranslationDialog,
           ),
           _buildAnimatedFeatureCard(
             'Face Detection',
-            'https://assets9.lottiefiles.com/packages/lf20_rqxo1iaj.json',
+            'assets/rive/face_scan.riv',
             _detectFaces,
           ),
           _buildAnimatedFeatureCard(
             'OCR Scanner',
-            'https://assets10.lottiefiles.com/packages/lf20_88iw3huk.json',
+            'assets/rive/document_scan.riv',
             _scanText,
           ),
         ]),
@@ -285,7 +286,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildAnimatedFeatureCard(String title, String lottieUrl, VoidCallback onTap) {
+  Widget _buildAnimatedFeatureCard(String title, String riveAsset, VoidCallback onTap) {
     return Card(
       elevation: 5,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
@@ -310,15 +311,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               SizedBox(
                 height: 60,
                 width: 60,
-                child: Lottie.network(
-                  lottieUrl,
+                child: rive.RiveAnimation.asset(
+                  riveAsset,
                   fit: BoxFit.cover,
-                  repeat: true,
-                  errorBuilder: (context, error, stackTrace) => const Icon(
-                    Icons.error_outline,
-                    size: 32,
-                    color: Colors.red,
-                  ),
                 ),
               ),
               const SizedBox(height: 12),

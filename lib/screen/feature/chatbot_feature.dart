@@ -21,7 +21,7 @@ class _ChatBotFeatureState extends State<ChatBotFeature> {
     return Scaffold(
       //app bar
       appBar: AppBar(
-        title: const Text('Chat with AI Assistant'),
+        title: const Text('Chat with Chatty'),
       ),
 
       //send message field & btn

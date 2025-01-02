@@ -1,4 +1,4 @@
-# AI Assistant App
+# Chatty App
 
 A powerful Flutter application that integrates various AI capabilities including speech recognition, image processing, text translation, and more.
 

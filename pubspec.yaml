@@ -87,6 +87,8 @@ dependencies:
   flutter_tts: ^3.8.5
   image_picker: ^1.0.7
 
+  rive: ^0.12.4
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -104,6 +106,7 @@ flutter:
 
   # To add assets to your application, add an assets section, like this:
   assets:
+    - assets/rive/
     - assets/images/
     - assets/lottie/
     - assets/lottie/image_scan.json

@@ -90,7 +90,7 @@ class ImageController extends GetxController {
 
       await Share.shareXFiles([XFile(file.path)],
           text:
-              'Check out this Amazing Image created by Ai Assistant App by Harsh H. Rajpurohit');
+              'Check out this Amazing Image created by Chatty App by Harsh H. Rajpurohit');
     } catch (e) {
       //hide loading
       Get.back();
