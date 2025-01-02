@@ -16,10 +16,10 @@ extension MyHomeType on HomeType {
       };
 
   //lottie
-  String get animation => switch (this) {
-        HomeType.aiChatBot => 'https://public.rive.app/community/files/2244-4437-ai-chatbot/main.riv',
-        HomeType.aiImage => 'https://public.rive.app/community/files/2196-4348-ai-art-generation/main.riv',
-        HomeType.aiTranslator => 'https://public.rive.app/community/files/1867-3678-translation/main.riv',
+  String get lottie => switch (this) {
+        HomeType.aiChatBot => 'assets/lottie/ai_chat.json',
+        HomeType.aiImage => 'assets/lottie/ai_art.json',
+        HomeType.aiTranslator => 'assets/lottie/translate.json',
       };
 
   //for alignment

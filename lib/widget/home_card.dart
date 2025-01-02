@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:rive/rive.dart';
+import 'package:lottie/lottie.dart';
 
 import '../helper/global.dart';
 import '../model/home_type.dart';
@@ -33,10 +33,14 @@ class HomeCard extends StatelessWidget {
                     Container(
                       width: mq.width * .35,
                       padding: homeType.padding,
-                      child: CachedRiveAnimation(
-                        url: homeType.animation,
-                        fallbackAsset: homeType.fallbackAnimation,
-                        placeholder: const CircularProgressIndicator(),
+                      child: Lottie.asset(
+                        homeType.lottie,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) => const Icon(
+                          Icons.error_outline,
+                          color: Colors.red,
+                          size: 40,
+                        ),
                       ),
                     ),
 
@@ -73,10 +77,14 @@ class HomeCard extends StatelessWidget {
                     Container(
                       width: mq.width * .35,
                       padding: homeType.padding,
-                      child: CachedRiveAnimation(
-                        url: homeType.animation,
-                        fallbackAsset: homeType.fallbackAnimation,
-                        placeholder: const CircularProgressIndicator(),
+                      child: Lottie.asset(
+                        homeType.lottie,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) => const Icon(
+                          Icons.error_outline,
+                          color: Colors.red,
+                          size: 40,
+                        ),
                       ),
                     ),
                   ],

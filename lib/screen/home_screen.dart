@@ -275,22 +275,22 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         delegate: SliverChildListDelegate([
           _buildAnimatedFeatureCard(
             'Image Analysis',
-            'https://public.rive.app/community/files/4985-9876-image-scan/main.riv',
+            'assets/lottie/image_scan.json',
             _processImage,
           ),
           _buildAnimatedFeatureCard(
             'Translation',
-            'https://public.rive.app/community/files/3245-6789-translate/main.riv',
+            'assets/lottie/translate.json',
             _showTranslationDialog,
           ),
           _buildAnimatedFeatureCard(
             'Face Detection',
-            'https://public.rive.app/community/files/5678-9012-face-scan/main.riv',
+            'assets/lottie/face_scan.json',
             _detectFaces,
           ),
           _buildAnimatedFeatureCard(
             'OCR Scanner',
-            'https://public.rive.app/community/files/6789-0123-document-scan/main.riv',
+            'assets/lottie/text_scan.json',
             _scanText,
           ),
         ]),
@@ -298,7 +298,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildAnimatedFeatureCard(String title, String riveAsset, VoidCallback onTap) {
+  Widget _buildAnimatedFeatureCard(String title, String lottieAsset, VoidCallback onTap) {
     return Card(
       elevation: 5,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
@@ -323,8 +323,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               SizedBox(
                 height: 60,
                 width: 60,
-                child: rive.RiveAnimation.asset(
-                  riveAsset,
+                child: Lottie.asset(
+                  lottieAsset,
                   fit: BoxFit.cover,
                 ),
               ),
