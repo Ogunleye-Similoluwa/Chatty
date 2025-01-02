@@ -4,6 +4,7 @@ import 'package:rive/rive.dart';
 
 import '../helper/global.dart';
 import '../model/home_type.dart';
+import '../widget/cached_rive_animation.dart';
 
 class HomeCard extends StatelessWidget {
   final HomeType homeType;
@@ -32,9 +33,10 @@ class HomeCard extends StatelessWidget {
                     Container(
                       width: mq.width * .35,
                       padding: homeType.padding,
-                      child: RiveAnimation.asset(
-                        homeType.animation,
-                        fit: BoxFit.cover,
+                      child: CachedRiveAnimation(
+                        url: homeType.animation,
+                        fallbackAsset: homeType.fallbackAnimation,
+                        placeholder: const CircularProgressIndicator(),
                       ),
                     ),
 
@@ -71,9 +73,10 @@ class HomeCard extends StatelessWidget {
                     Container(
                       width: mq.width * .35,
                       padding: homeType.padding,
-                      child: RiveAnimation.asset(
-                        homeType.animation,
-                        fit: BoxFit.cover,
+                      child: CachedRiveAnimation(
+                        url: homeType.animation,
+                        fallbackAsset: homeType.fallbackAnimation,
+                        placeholder: const CircularProgressIndicator(),
                       ),
                     ),
                   ],

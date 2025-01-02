@@ -18,6 +18,7 @@ import '../helper/global.dart';
 import '../helper/pref.dart';
 import '../model/home_type.dart';
 import '../widget/home_card.dart';
+import '../helper/animation_cache.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -61,6 +62,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     _initializeAIServices();
     _setupAnimations();
+    _preloadAnimations();
   }
 
   Future<void> _initializeAIServices() async {
@@ -103,6 +105,16 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       vsync: this,
       duration: const Duration(milliseconds: 500),
     );
+  }
+
+  Future<void> _preloadAnimations() async {
+    final urls = [
+      'https://public.rive.app/community/runtime-files/2244-4437-ai-chatbot.riv',
+      'https://public.rive.app/community/runtime-files/2196-4348-ai-art-generation.riv',
+      'https://public.rive.app/community/runtime-files/1867-3678-translation.riv',
+      // Add other URLs...
+    ];
+    await AnimationCache().preloadAnimations(urls);
   }
 
   @override
@@ -263,22 +275,22 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         delegate: SliverChildListDelegate([
           _buildAnimatedFeatureCard(
             'Image Analysis',
-            'assets/rive/ai_art.riv',
+            'https://public.rive.app/community/files/4985-9876-image-scan/main.riv',
             _processImage,
           ),
           _buildAnimatedFeatureCard(
             'Translation',
-            'assets/rive/translate.riv',
+            'https://public.rive.app/community/files/3245-6789-translate/main.riv',
             _showTranslationDialog,
           ),
           _buildAnimatedFeatureCard(
             'Face Detection',
-            'assets/rive/face_scan.riv',
+            'https://public.rive.app/community/files/5678-9012-face-scan/main.riv',
             _detectFaces,
           ),
           _buildAnimatedFeatureCard(
             'OCR Scanner',
-            'assets/rive/document_scan.riv',
+            'https://public.rive.app/community/files/6789-0123-document-scan/main.riv',
             _scanText,
           ),
         ]),

@@ -17,9 +17,9 @@ extension MyHomeType on HomeType {
 
   //lottie
   String get animation => switch (this) {
-        HomeType.aiChatBot => 'assets/rive/ai_chat.riv',
-        HomeType.aiImage => 'assets/rive/ai_art.riv',
-        HomeType.aiTranslator => 'assets/rive/translate.riv',
+        HomeType.aiChatBot => 'https://public.rive.app/community/files/2244-4437-ai-chatbot/main.riv',
+        HomeType.aiImage => 'https://public.rive.app/community/files/2196-4348-ai-art-generation/main.riv',
+        HomeType.aiTranslator => 'https://public.rive.app/community/files/1867-3678-translation/main.riv',
       };
 
   //for alignment
@@ -42,5 +42,11 @@ extension MyHomeType on HomeType {
         HomeType.aiChatBot => () => Get.to(() => const ChatBotFeature()),
         HomeType.aiImage => () => Get.to(() => const ImageFeature()),
         HomeType.aiTranslator => () => Get.to(() => const TranslatorFeature()),
+      };
+
+  String get fallbackAnimation => switch (this) {
+        HomeType.aiChatBot => 'assets/rive/fallback/chatbot.riv',
+        HomeType.aiImage => 'assets/rive/fallback/art.riv',
+        HomeType.aiTranslator => 'assets/rive/fallback/translate.riv',
       };
 }

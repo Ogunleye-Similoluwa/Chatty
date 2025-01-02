@@ -89,6 +89,12 @@ dependencies:
 
   rive: ^0.12.4
 
+  flutter_cache_manager: ^3.3.1
+  
+  # Add fallback animations
+  assets:
+    - assets/rive/fallback/
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -113,3 +119,7 @@ flutter:
     - assets/lottie/translate.json
     - assets/lottie/face_scan.json
     - assets/lottie/text_scan.json
+    - assets/rive/fallback/chatbot.riv
+    - assets/rive/fallback/loading.riv
+    - assets/rive/fallback/translate.riv
+    - assets/rive/fallback/art.riv
