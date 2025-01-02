@@ -88,6 +88,8 @@ dependencies:
   flutter_tts: ^3.8.5
   image_picker: ^1.0.7
 
+  flutter_dotenv: ^5.1.0
+
 
 
 
@@ -109,6 +111,7 @@ flutter:
 
   # To add assets to your application, add an assets section, like this:
   assets:
+    - .env
     - assets/images/
     - assets/lottie/
     - assets/lottie/animation4.json

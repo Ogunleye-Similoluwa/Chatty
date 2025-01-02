@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get_navigation/src/root/get_material_app.dart';
 import 'package:get/get_navigation/src/routes/get_route.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 import 'apis/app_write.dart';
 import 'helper/ad_helper.dart';
@@ -15,6 +16,14 @@ Future<void> main() async {
 
   // init hive
   await Pref.initialize();
+
+  // Load environment variables
+  try {
+    await dotenv.load(fileName: '.env');
+  } catch (e) {
+    print('Error loading .env file: $e');
+    // Set a default API key or handle the error appropriately
+  }
 
   // for app write initialization
   AppWrite.init();
