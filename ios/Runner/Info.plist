@@ -46,9 +46,9 @@
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>NSSpeechRecognitionUsageDescription</key>
-	<string>Text will be spoken out loud to provide audio feedback</string>
+	<string>This application needs the speech recognition permission</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>Microphone access is needed for speech recognition features</string>
+	<string>This application needs to access your microphone for speech recognition</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Access to photo library is needed for image analysis and processing features</string>
 	<key>NSCameraUsageDescription</key>

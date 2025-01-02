@@ -21,12 +21,12 @@ class OnboardingScreen extends StatelessWidget {
           title: 'Ask me Anything',
           subtitle:
               'I can be your Best Friend & You can ask me anything & I will help you!',
-          lottie: 'https://static.iconscout.com/lottie/premium/preview-watermark/chatbot-3784896-3161578.json'),
+          lottie: 'assets/lottie/animation9.json'),
 
       //onboarding 2
       Onboard(
         title: 'Imagination to Reality',
-        lottie: 'https://static.iconscout.com/lottie/premium/preview-watermark/artificial-intelligence-brain-3784902-3161584.json',
+        lottie: 'assets/lottie/animation10.json',
         subtitle:
             'Just Imagine anything & let me know, I will create something wonderful for you!',
       ),

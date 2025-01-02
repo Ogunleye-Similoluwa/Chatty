@@ -2,23 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:lottie/lottie.dart';
-import 'package:speech_to_text/speech_to_text.dart';
-import 'package:flutter_tts/flutter_tts.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:translator_plus/translator_plus.dart';
-import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:google_ml_kit/google_ml_kit.dart';
-import 'package:rive/rive.dart' as rive;
+import 'package:speech_to_text/speech_to_text.dart' as stt;
+import 'package:flutter_tts/flutter_tts.dart';
+import 'package:translator_plus/translator_plus.dart';
 import 'dart:io';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:animated_text_kit/animated_text_kit.dart';
 
-import '../helper/ad_helper.dart';
 import '../helper/global.dart';
-import '../helper/pref.dart';
 import '../model/home_type.dart';
 import '../widget/home_card.dart';
-import '../helper/animation_cache.dart';
+import '../screen/feature/translator_feature.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -27,609 +22,542 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
+class _HomeScreenState extends State<HomeScreen> {
   final _isDarkMode = Get.isDarkMode.obs;
-  
-  // AI Controllers
-  final SpeechToText _speechToText = SpeechToText();
-  final FlutterTts _flutterTts = FlutterTts();
-  final ImagePicker _picker = ImagePicker();
-  final translator = GoogleTranslator();
-  
-  // ML Kit Vision APIs
-  late final ImageLabeler _imageLabeler;
-  late final FaceDetector _faceDetector;
-  late final TextRecognizer _textRecognizer;
-  
-  // UI States
-  final _isListening = false.obs;
-  final _spokenText = ''.obs;
-  final _processingImage = false.obs;
+  final _isProcessing = false.obs;
   final _aiResponse = ''.obs;
   
-  // Animation Controllers
-  late AnimationController _pulseController;
-  late AnimationController _slideController;
+  // Services
+  final _picker = ImagePicker();
+  final _imageLabeler = GoogleMlKit.vision.imageLabeler();
+  final _faceDetector = GoogleMlKit.vision.faceDetector();
+  final _textRecognizer = GoogleMlKit.vision.textRecognizer();
+  final _speechToText = stt.SpeechToText();
+  final _flutterTts = FlutterTts();
+  final _translator = GoogleTranslator();
+  final _isListening = false.obs;
+  final _selectedLanguage = 'es'.obs; // Default to Spanish
+  
+  final _languages = {
+    'es': 'Spanish',
+    'fr': 'French',
+    'de': 'German',
+    'it': 'Italian',
+    'pt': 'Portuguese',
+    'hi': 'Hindi',
+    'ja': 'Japanese',
+    'ko': 'Korean',
+    'zh-cn': 'Chinese',
+  };
 
-  // Add new state variables
-  final _selectedLanguage = 'English'.obs;
-  final _isProcessing = false.obs;
-  final List<String> _recentCommands = <String>[].obs;
+  bool _speechEnabled = false;
+  bool _isInitialized = false;
 
   @override
   void initState() {
     super.initState();
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-    _initializeAIServices();
-    _setupAnimations();
-    _preloadAnimations();
+    _initSpeechAndTTS();
   }
 
-  Future<void> _initializeAIServices() async {
-    // Initialize Speech Recognition
-    await _speechToText.initialize();
-    
-    // Initialize ML Kit Services
-    _imageLabeler = ImageLabeler(options: ImageLabelerOptions(confidenceThreshold: 0.7));
-    _faceDetector = FaceDetector(options: FaceDetectorOptions(
-      enableLandmarks: true,
-      enableClassification: true,
-      enableTracking: true
-    ));
-    _textRecognizer = TextRecognizer();
-    
-    // Setup TTS with proper configuration
-    await _flutterTts.setLanguage("en-US");
-    await _flutterTts.setPitch(1.0);
-    await _flutterTts.setSpeechRate(0.5);  // Slower rate for better clarity
-    await _flutterTts.setVolume(1.0);
-    
-    // Set iOS configuration
-    await _flutterTts.setIosAudioCategory(
-      IosTextToSpeechAudioCategory.ambient,
-      [
-        IosTextToSpeechAudioCategoryOptions.allowBluetooth,
-        IosTextToSpeechAudioCategoryOptions.allowBluetoothA2DP,
-        IosTextToSpeechAudioCategoryOptions.mixWithOthers,
-      ],
-    );
+  Future<void> _initSpeechAndTTS() async {
+    try {
+      // Initialize TTS
+      await _flutterTts.setLanguage('en-US');
+      await _flutterTts.setSpeechRate(0.5);
+      
+      // Initialize speech recognition
+      bool available = await _speechToText.initialize(
+        onStatus: (String status) {
+          print('Speech status: $status');
+          if (status == 'done' || status == 'notListening') {
+            _isListening.value = false;
+          }
+        },
+        onError: (error) => print('Speech error: $error'),
+      );
+
+      _speechEnabled = available;
+      _isInitialized = true;
+      setState(() {});
+      
+      print('Speech recognition available: $available');
+    } catch (e) {
+      print('Initialization error: $e');
+      Get.snackbar('Error', 'Failed to initialize speech recognition');
+    }
   }
 
-  void _setupAnimations() {
-    _pulseController = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 1),
-    )..repeat(reverse: true);
-    
-    _slideController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 500),
-    );
-  }
-
-  Future<void> _preloadAnimations() async {
-    final urls = [
-      'https://public.rive.app/community/runtime-files/2244-4437-ai-chatbot.riv',
-      'https://public.rive.app/community/runtime-files/2196-4348-ai-art-generation.riv',
-      'https://public.rive.app/community/runtime-files/1867-3678-translation.riv',
-      // Add other URLs...
-    ];
-    await AnimationCache().preloadAnimations(urls);
+  @override
+  void dispose() {
+    _imageLabeler.close();
+    _faceDetector.close();
+    _textRecognizer.close();
+    _flutterTts.stop();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: _buildAppBar(),
-      body: _buildBody(),
-      floatingActionButton: _buildExpandableFab(),
-      drawer: _buildAIDrawer(),
-    );
-  }
-
-  PreferredSizeWidget _buildAppBar() {
-    return AppBar(
-      title: const Text(appName),
-      actions: [
-        _buildVoiceButton(),
-        _buildThemeToggle(),
-      ],
-    );
-  }
-
-  Widget _buildBody() {
-    return Stack(
-      children: [
-        RefreshIndicator(
-          onRefresh: () async {
-            // Refresh AI models or clear cache
-            await _initializeAIServices();
-          },
-          child: CustomScrollView(
-            slivers: [
-              _buildWelcomeHeader(),
-              _buildAIResponseSection(),
-              _buildFeatureGridSection(),
-              _buildRecentCommandsSection(),
-              _buildMainContentSection(),
-            ],
+      appBar: AppBar(
+        title: const Text('Chatty'),
+        actions: [
+          IconButton(
+            icon: Icon(_isDarkMode.value ? Icons.light_mode : Icons.dark_mode),
+            onPressed: () {
+              _isDarkMode.value = !_isDarkMode.value;
+              Get.changeThemeMode(_isDarkMode.value ? ThemeMode.dark : ThemeMode.light);
+            },
           ),
-        ),
-        // Loading overlay
-        Obx(() => _isProcessing.value
-          ? Container(
-              color: Colors.black54,
-              child: Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
+        ],
+      ),
+      body: Column(
+        children: [
+          // Main Feature Cards
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
+                HomeCard(homeType: HomeType.aiChatBot),
+                HomeCard(homeType: HomeType.aiImage),
+                HomeCard(homeType: HomeType.aiTranslator),
+                
+                const SizedBox(height: 20),
+                
+                // Additional Features Grid
+                GridView.count(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  crossAxisCount: 2,
+                  mainAxisSpacing: 16,
+                  crossAxisSpacing: 16,
                   children: [
-                    const CircularProgressIndicator(),
-                    const SizedBox(height: 16),
-                    AnimatedTextKit(
-                      animatedTexts: [
-                        TypewriterAnimatedText(
-                          'Processing...',
-                          textStyle: const TextStyle(
-                            fontSize: 18,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ],
-                      repeatForever: true,
+                    _buildFeatureCard(
+                      'Image Analysis',
+                      'assets/lottie/animation4.json',
+                      _processImage,
+                    ),
+                    _buildFeatureCard(
+                      'Face Detection',
+                      'assets/lottie/animation9.json',
+                      _detectFaces,
+                    ),
+                    _buildFeatureCard(
+                      'Text Scanner',
+                      'assets/lottie/animation7.json',
+                      _scanText,
                     ),
                   ],
                 ),
-              ),
-            )
-          : const SizedBox()),
-      ],
-    );
-  }
 
-  Widget _buildWelcomeHeader() {
-    return SliverToBoxAdapter(
-      child: Container(
-        padding: EdgeInsets.all(mq.width * .04),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              Theme.of(context).primaryColor,
-              Theme.of(context).primaryColor.withOpacity(0.7),
-            ],
-          ),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Chatty',
-              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 8),
-            AnimatedTextKit(
-              animatedTexts: [
-                TypewriterAnimatedText(
-                  'What can I help you with today?',
-                  textStyle: const TextStyle(color: Colors.white70),
+                // Add Speech Recognition Card
+                _buildFeatureCard(
+                  'Voice Translator',
+                  'assets/lottie/animation8.json',
+                  _showVoiceTranslatorDialog,
                 ),
               ],
-              repeatForever: true,
             ),
-          ],
-        ),
-      ).animate().fadeIn().slideY(begin: -0.2),
-    );
-  }
+          ),
+          
+          // Response Area
+          Obx(() => _isProcessing.value 
+            ? const Center(child: CircularProgressIndicator())
+            : _aiResponse.value.isNotEmpty
+              ? Container(
+                  padding: const EdgeInsets.all(16),
+                  margin: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).cardColor,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(_aiResponse.value),
+                )
+              : const SizedBox.shrink()
+          ),
+        ],
+      ),
 
-  Widget _buildAIResponseSection() {
-    return SliverToBoxAdapter(
-      child: Obx(() => _aiResponse.value.isEmpty 
-        ? const SizedBox() 
-        : Card(
-            margin: EdgeInsets.all(mq.width * .04),
-            child: Padding(
-              padding: const EdgeInsets.all(12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'AI Response',
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(_aiResponse.value),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      TextButton(
-                        onPressed: () => _speakResponse(_aiResponse.value),
-                        child: const Text('Speak'),
-                      ),
-                      TextButton(
-                        onPressed: () => _aiResponse.value = '',
-                        child: const Text('Clear'),
-                      ),
-                    ],
-                  ),
-                ],
+      // Add FAB for quick voice input
+      floatingActionButton: Obx(() => GestureDetector(
+        onTapDown: (_) => _startListening(),
+        onTapUp: (_) => _stopListening(),
+        onTapCancel: () => _stopListening(),
+        child: Container(
+          width: 60,
+          height: 60,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: _isListening.value ? Colors.red : Theme.of(context).primaryColor,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.2),
+                blurRadius: 6,
+                offset: const Offset(0, 3),
               ),
-            ),
+            ],
           ),
-      ),
-    );
-  }
-
-  Widget _buildFeatureGridSection() {
-    return SliverPadding(
-      padding: EdgeInsets.all(mq.width * .04),
-      sliver: SliverGrid(
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          childAspectRatio: 1.1,
-          mainAxisSpacing: 15,
-          crossAxisSpacing: 15,
+          child: Icon(
+            _isListening.value ? Icons.mic : Icons.mic_none,
+            color: Colors.white,
+            size: 30,
+          ),
         ),
-        delegate: SliverChildListDelegate([
-          _buildAnimatedFeatureCard(
-            'Image Analysis',
-            'assets/lottie/image_scan.json',
-            _processImage,
-          ),
-          _buildAnimatedFeatureCard(
-            'Translation',
-            'assets/lottie/translate.json',
-            _showTranslationDialog,
-          ),
-          _buildAnimatedFeatureCard(
-            'Face Detection',
-            'assets/lottie/face_scan.json',
-            _detectFaces,
-          ),
-          _buildAnimatedFeatureCard(
-            'OCR Scanner',
-            'assets/lottie/text_scan.json',
-            _scanText,
-          ),
-        ]),
-      ),
+      )),
     );
   }
 
-  Widget _buildAnimatedFeatureCard(String title, String lottieAsset, VoidCallback onTap) {
+  Widget _buildFeatureCard(String title, String animation, VoidCallback onTap) {
     return Card(
-      elevation: 5,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+      elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(15),
-        child: Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(15),
-            gradient: LinearGradient(
-              colors: [
-                Theme.of(context).cardColor,
-                Theme.of(context).cardColor.withOpacity(0.8),
-              ],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-          ),
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(12),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              SizedBox(
-                height: 60,
-                width: 60,
-                child: Lottie.asset(
-                  lottieAsset,
-                  fit: BoxFit.cover,
-                ),
+              Lottie.asset(
+                animation,
+                height: 80,
+                width: 80,
+                fit: BoxFit.contain,
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 8),
               Text(
                 title,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                ),
                 textAlign: TextAlign.center,
+                style: const TextStyle(fontWeight: FontWeight.bold),
               ),
             ],
           ),
         ),
       ),
     ).animate()
-      .fadeIn(delay: const Duration(milliseconds: 300))
-      .scale(delay: const Duration(milliseconds: 300));
+      .fadeIn(duration: const Duration(milliseconds: 500))
+      .slideY(begin: 0.2, duration: const Duration(milliseconds: 500));
   }
 
   Future<void> _processImage() async {
-    final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
-    if (image == null) return;
-
-    _processingImage.value = true;
     try {
+      final image = await _picker.pickImage(source: ImageSource.gallery);
+      if (image == null) return;
+
+      _isProcessing.value = true;
       final inputImage = InputImage.fromFile(File(image.path));
       final labels = await _imageLabeler.processImage(inputImage);
       
-      final response = labels.map((label) => 
+      _aiResponse.value = labels.map((label) => 
         '${label.label} (${(label.confidence * 100).toStringAsFixed(1)}%)'
       ).join('\n');
-      
-      _aiResponse.value = 'Image Analysis Results:\n$response';
+    } catch (e) {
+      _aiResponse.value = 'Error processing image: $e';
     } finally {
-      _processingImage.value = false;
+      _isProcessing.value = false;
     }
   }
 
   Future<void> _detectFaces() async {
-    final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
-    if (image == null) return;
-
     try {
+      final image = await _picker.pickImage(source: ImageSource.gallery);
+      if (image == null) return;
+
+      _isProcessing.value = true;
       final inputImage = InputImage.fromFile(File(image.path));
       final faces = await _faceDetector.processImage(inputImage);
       
-      String result = 'Found ${faces.length} faces\n';
-      for (Face face in faces) {
-        result += '\nFace ${face.trackingId}:\n';
-        result += 'Smiling: ${face.smilingProbability! > 0.5 ? 'Yes' : 'No'}\n';
-        result += 'Left eye open: ${face.leftEyeOpenProbability! > 0.5 ? 'Yes' : 'No'}\n';
-        result += 'Right eye open: ${face.rightEyeOpenProbability! > 0.5 ? 'Yes' : 'No'}\n';
+      if (faces.isEmpty) {
+        _aiResponse.value = 'No faces detected';
+        return;
       }
-      
-      _aiResponse.value = result;
+
+      _aiResponse.value = faces.map((face) => 
+        'Face ${faces.indexOf(face) + 1}:\n'
+        '${face.smilingProbability != null ? "Smiling: ${(face.smilingProbability! * 100).toStringAsFixed(1)}%\n" : ""}'
+        '${face.leftEyeOpenProbability != null ? "Left eye open: ${(face.leftEyeOpenProbability! * 100).toStringAsFixed(1)}%\n" : ""}'
+        '${face.rightEyeOpenProbability != null ? "Right eye open: ${(face.rightEyeOpenProbability! * 100).toStringAsFixed(1)}%" : ""}'
+      ).join('\n\n');
     } catch (e) {
-      _aiResponse.value = 'Error processing image: $e';
+      _aiResponse.value = 'Error detecting faces: $e';
+    } finally {
+      _isProcessing.value = false;
     }
   }
 
   Future<void> _scanText() async {
-    final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
-    if (image == null) return;
-
     try {
+      final image = await _picker.pickImage(source: ImageSource.gallery);
+      if (image == null) return;
+
+      _isProcessing.value = true;
       final inputImage = InputImage.fromFile(File(image.path));
       final recognizedText = await _textRecognizer.processImage(inputImage);
       
-      _aiResponse.value = 'Detected Text:\n${recognizedText.text}';
+      _aiResponse.value = recognizedText.text.isEmpty 
+        ? 'No text detected' 
+        : recognizedText.text;
     } catch (e) {
       _aiResponse.value = 'Error scanning text: $e';
+    } finally {
+      _isProcessing.value = false;
     }
   }
 
-  Future<void> _speakResponse(String text) async {
-    try {
-      if (await _flutterTts.speak(text) == 1) { // 1 means success
-        _isProcessing.value = true;
-        
-        _flutterTts.setCompletionHandler(() {
-          _isProcessing.value = false;
-        });
-      }
-    } catch (e) {
-      Get.snackbar(
-        'Error',
-        'Failed to speak: $e',
-        snackPosition: SnackPosition.BOTTOM,
-      );
-    }
-  }
-
-  Widget _buildVoiceButton() {
-    return IconButton(
-      onPressed: _startListening,
-      icon: Obx(() => Icon(
-        _isListening.value ? Icons.mic : Icons.mic_none,
-        color: _isListening.value ? Colors.red : null,
-      )),
-    );
-  }
-
-  Widget _buildThemeToggle() {
-    return IconButton(
-      padding: const EdgeInsets.only(right: 10),
-      onPressed: () {
-        Get.changeThemeMode(_isDarkMode.value ? ThemeMode.light : ThemeMode.dark);
-        _isDarkMode.value = !_isDarkMode.value;
-        Pref.isDarkMode = _isDarkMode.value;
-      },
-      icon: Obx(() => Icon(
-        _isDarkMode.value ? Icons.brightness_2_rounded : Icons.brightness_5_rounded,
-        size: 26,
-      )),
-    );
-  }
-
-  Widget _buildMainContentSection() {
-    return SliverToBoxAdapter(
-      child: Padding(
-        padding: EdgeInsets.symmetric(
-          horizontal: mq.width * .04,
-          vertical: mq.height * .015,
-        ),
-        child: Column(
-          children: HomeType.values.map((e) => HomeCard(homeType: e)).toList(),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildExpandableFab() {
-    return FloatingActionButton.extended(
-      onPressed: _startListening,
-      label: Row(
-        children: [
-          Obx(() => Icon(
-            _isListening.value ? Icons.mic : Icons.mic_none,
-            color: _isListening.value ? Colors.red : null,
-          )),
-          const SizedBox(width: 8),
-          const Text('Speak'),
-        ],
-      ),
-    ).animate()
-      .scale(delay: const Duration(milliseconds: 500))
-      .shimmer(delay: const Duration(seconds: 2), duration: const Duration(seconds: 2));
-  }
-
-  Future<void> _showTranslationDialog() async {
-    final languages = ['English', 'Spanish', 'French', 'German', 'Chinese', 'Japanese'];
-    
-    Get.dialog(
+  Future<void> _showVoiceTranslatorDialog() async {
+    await Get.dialog(
       AlertDialog(
-        title: const Text('Select Target Language'),
-        content: SizedBox(
-          width: double.maxFinite,
-          child: ListView.builder(
-            shrinkWrap: true,
-            itemCount: languages.length,
-            itemBuilder: (context, index) {
-              return ListTile(
-                title: Text(languages[index]),
-                onTap: () {
-                  _selectedLanguage.value = languages[index];
-                  Get.back();
-                  _translateText();
-                },
-              );
-            },
-          ),
-        ),
-      ),
-    );
-  }
-
-  void _startListening() async {
-    if (!_isListening.value) {
-      bool available = await _speechToText.initialize();
-      if (available) {
-        _isListening.value = true;
-        _speechToText.listen(
-          onResult: (result) {
-            _spokenText.value = result.recognizedWords;
-            if (result.finalResult) {
-              _isListening.value = false;
-              _processVoiceCommand(_spokenText.value);
-            }
-          },
-        );
-      }
-    } else {
-      _isListening.value = false;
-      _speechToText.stop();
-    }
-  }
-
-  void _processVoiceCommand(String command) async {
-    if (command.isEmpty) return;
-    _aiResponse.value = 'Processing: "$command"';
-    // Add your voice command processing logic here
-  }
-
-  Future<void> _translateText() async {
-    try {
-      final text = _spokenText.value.isNotEmpty ? _spokenText.value : 'Hello World';
-      final translation = await translator.translate(text, to: 'es');
-      _aiResponse.value = 'Translation:\n$text → ${translation.text}';
-    } catch (e) {
-      _aiResponse.value = 'Translation failed: $e';
-    }
-  }
-
-  Widget _buildAIDrawer() {
-    return Drawer(
-      child: ListView(
-        padding: EdgeInsets.zero,
-        children: [
-          DrawerHeader(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  Theme.of(context).primaryColor,
-                  Theme.of(context).primaryColor.withOpacity(0.7),
-                ],
-              ),
+        title: Row(
+          children: [
+            const Text('Voice Translator'),
+            const Spacer(),
+            IconButton(
+              icon: const Icon(Icons.close),
+              onPressed: () {
+                _stopListening();
+                Get.back();
+              },
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'AI Features',
-                  style: TextStyle(
+          ],
+        ),
+        content: Obx(() => SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Language Selection
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.grey),
+                ),
+                child: DropdownButton<String>(
+                  value: _selectedLanguage.value,
+                  isExpanded: true,
+                  underline: const SizedBox(),
+                  items: _languages.entries.map((entry) {
+                    return DropdownMenuItem(
+                      value: entry.key,
+                      child: Text(entry.value),
+                    );
+                  }).toList(),
+                  onChanged: (value) => _selectedLanguage.value = value!,
+                ),
+              ),
+
+              const SizedBox(height: 20),
+
+              // Mic Button
+              GestureDetector(
+                onTapDown: (_) => _startListening(),
+                onTapUp: (_) => _stopListening(),
+                onTapCancel: () => _stopListening(),
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: _isListening.value ? Colors.red : Colors.blue,
+                  ),
+                  child: Icon(
+                    _isListening.value ? Icons.mic : Icons.mic_none,
+                    size: 40,
                     color: Colors.white,
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
                   ),
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  'Powered by ML Kit & GPT',
-                  style: TextStyle(color: Colors.white.withOpacity(0.8)),
+              ),
+
+              const SizedBox(height: 10),
+              Text(
+                _isListening.value 
+                  ? 'Listening...' 
+                  : 'Press and hold to speak',
+                style: const TextStyle(fontSize: 16),
+              ),
+
+              const SizedBox(height: 20),
+
+              // Response Area with Speak Buttons
+              if (_aiResponse.value.isNotEmpty) ...[
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (_aiResponse.value.contains('Original:')) ...[
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                _aiResponse.value.split('\n\n')[0],
+                                style: const TextStyle(fontSize: 14),
+                              ),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.volume_up),
+                              onPressed: () {
+                                final originalText = _aiResponse.value
+                                    .split('\n\n')[0]
+                                    .replaceAll('Original: ', '');
+                                _speakText(originalText, 'en-US');
+                              },
+                            ),
+                          ],
+                        ),
+                        const Divider(),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                _aiResponse.value.split('\n\n')[1],
+                                style: const TextStyle(fontSize: 14),
+                              ),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.volume_up),
+                              onPressed: () {
+                                final translatedText = _aiResponse.value
+                                    .split('\n\n')[1]
+                                    .replaceAll('Translated: ', '');
+                                _speakText(translatedText, _selectedLanguage.value);
+                              },
+                            ),
+                          ],
+                        ),
+                      ] else ...[
+                        Text(
+                          _aiResponse.value,
+                          style: const TextStyle(fontSize: 14),
+                        ),
+                      ],
+                    ],
+                  ),
                 ),
               ],
-            ),
+            ],
           ),
-          ListTile(
-            leading: const Icon(Icons.history),
-            title: const Text('Command History'),
-            onTap: () => Get.back(),
-          ),
-          ListTile(
-            leading: const Icon(Icons.settings),
-            title: const Text('AI Settings'),
-            onTap: () => Get.back(),
-          ),
-        ],
+        )),
       ),
+      barrierDismissible: true,
     );
   }
 
-  Widget _buildRecentCommandsSection() {
-    return SliverToBoxAdapter(
-      child: Obx(() => _recentCommands.isEmpty
-          ? const SizedBox()
-          : Padding(
-              padding: EdgeInsets.all(mq.width * .04),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Recent Commands',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  ...List.generate(
-                    _recentCommands.length.clamp(0, 3),
-                    (index) => ListTile(
-                      title: Text(_recentCommands[index]),
-                      trailing: IconButton(
-                        icon: const Icon(Icons.replay),
-                        onPressed: () => _processVoiceCommand(_recentCommands[index]),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            )),
-    );
+  Future<void> _startListening() async {
+    if (!_isInitialized) {
+      Get.snackbar('Error', 'Speech recognition not initialized');
+      return;
+    }
+
+    try {
+      // Clear previous response
+      _aiResponse.value = '';
+      
+      // Stop if already listening
+      if (_speechToText.isListening) {
+        await _stopListening();
+        return;
+      }
+
+      // Start listening
+      _isListening.value = true;
+      
+      final available = await _speechToText.initialize(
+        onStatus: (status) {
+          print('Speech status: $status');
+          if (status == 'done' || status == 'notListening') {
+            _isListening.value = false;
+          }
+        },
+        onError: (error) {
+          print('Speech error: $error');
+          _isListening.value = false;
+          Get.snackbar('Error', error.errorMsg);
+        },
+      );
+
+      if (available) {
+        await _speechToText.listen(
+          onResult: (result) {
+            if (result.finalResult) {
+              _handleSpeechResult(result.recognizedWords);
+            } else {
+              // Show partial results
+              _aiResponse.value = 'Listening: ${result.recognizedWords}';
+            }
+          },
+          listenFor: const Duration(seconds: 10), // Reduced from 30 to 10 seconds
+          pauseFor: const Duration(seconds: 3),
+          partialResults: true,
+          localeId: 'en_US',
+          cancelOnError: true,
+          listenMode: stt.ListenMode.dictation, // Changed to dictation mode
+        );
+      }
+    } catch (e) {
+      print('Listen error: $e');
+      _isListening.value = false;
+      Get.snackbar('Error', 'Failed to start listening');
+    }
   }
 
-  @override
-  void dispose() {
-    _speechToText.stop();
-    _flutterTts.stop();
-    _imageLabeler.close();
-    _faceDetector.close();
-    _textRecognizer.close();
-    _pulseController.dispose();
-    _slideController.dispose();
-    super.dispose();
+  Future<void> _stopListening() async {
+    if (!_speechToText.isListening) return;
+    
+    try {
+      await _speechToText.stop();
+      _isListening.value = false;
+    } catch (e) {
+      print('Stop error: $e');
+    }
+  }
+
+  Future<void> _handleSpeechResult(String text) async {
+    if (text.isEmpty) {
+      _aiResponse.value = 'No speech detected';
+      return;
+    }
+
+    try {
+      _aiResponse.value = 'Original: $text\n\nTranslating...';
+      
+      final translation = await _translator.translate(
+        text,
+        from: 'auto',
+        to: _selectedLanguage.value,
+      );
+      
+      _aiResponse.value = 'Original: $text\n\nTranslated: ${translation.text}';
+      
+      // Don't auto-speak, let user choose when to play
+    } catch (e) {
+      print('Translation error: $e');
+      _aiResponse.value = 'Translation error: $e';
+    }
+  }
+
+  Future<void> _speakText(String text, String languageCode) async {
+    try {
+      await _flutterTts.setLanguage(languageCode);
+      await _flutterTts.setPitch(1.0);
+      await _flutterTts.setSpeechRate(0.5);
+      await _flutterTts.setVolume(1.0);
+      
+      var result = await _flutterTts.speak(text);
+      print('TTS Result: $result');
+      
+      if (result == 1) {
+        print('Speaking started successfully');
+      } else {
+        print('Failed to start speaking');
+      }
+    } catch (e) {
+      print('TTS error: $e');
+      Get.snackbar('Error', 'Failed to speak: $e');
+    }
   }
 }

@@ -17,9 +17,9 @@ extension MyHomeType on HomeType {
 
   //lottie
   String get lottie => switch (this) {
-        HomeType.aiChatBot => 'assets/lottie/ai_chat.json',
-        HomeType.aiImage => 'assets/lottie/ai_art.json',
-        HomeType.aiTranslator => 'assets/lottie/translate.json',
+        HomeType.aiChatBot => 'assets/lottie/animation1.json',
+        HomeType.aiImage => 'assets/lottie/animation2.json',
+        HomeType.aiTranslator => 'assets/lottie/animation3.json',
       };
 
   //for alignment

@@ -87,26 +87,9 @@ dependencies:
   flutter_tts: ^3.8.5
   image_picker: ^1.0.7
 
-  # For Google Language Translate
-  translator_plus: ^1.0.1
-
-  # For Saving Image to Gallery
-  image_gallery_saver: ^2.0.3
-
-  # For Sharing Image
-  share_plus: ^9.0.0
-
-  # Facebook Ads
-  easy_audience_network: ^0.0.6
-
-  # Add your preferred ML kit or AI API packages
-  google_ml_kit: ^0.13.0
 
 
-  # For Voice Features
-  speech_to_text: ^6.5.1
-  flutter_tts: ^3.8.5
-  image_picker: ^1.0.7
+
 
 dev_dependencies:
   flutter_test:
@@ -127,3 +110,8 @@ flutter:
   assets:
     - assets/images/
     - assets/lottie/
+    - assets/lottie/animation4.json
+    - assets/lottie/animation5.json
+    - assets/lottie/animation6.json
+    - assets/lottie/animation7.json
+    - assets/lottie/animation8.json

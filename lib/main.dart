@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get_navigation/src/root/get_material_app.dart';
+import 'package:get/get_navigation/src/routes/get_route.dart';
 
 import 'apis/app_write.dart';
 import 'helper/ad_helper.dart';
 import 'helper/global.dart';
 import 'helper/pref.dart';
 import 'screen/splash_screen.dart';
+import 'screen/feature/translator_feature.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -63,6 +65,14 @@ class MyApp extends StatelessWidget {
 
       //
       home: const SplashScreen(),
+
+      // Add routes
+      getPages: [
+        GetPage(
+          name: '/translator',
+          page: () => const TranslatorFeature(),
+        ),
+      ],
     );
   }
 }

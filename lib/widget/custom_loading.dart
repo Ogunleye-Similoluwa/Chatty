@@ -10,7 +10,7 @@ class CustomLoading extends StatelessWidget {
       width: 100,
       height: 100,
       child: Lottie.asset(
-        'assets/lottie/loading.json',
+        'assets/lottie/animation8.json',
         fit: BoxFit.contain,
         errorBuilder: (context, error, stackTrace) => 
             const CircularProgressIndicator(),
