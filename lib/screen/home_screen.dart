@@ -36,18 +36,18 @@ class _HomeScreenState extends State<HomeScreen> {
   final _flutterTts = FlutterTts();
   final _translator = GoogleTranslator();
   final _isListening = false.obs;
-  final _selectedLanguage = 'es'.obs; // Default to Spanish
+  final _selectedLanguage = 'es'.obs;
   
-  final _languages = {
-    'es': 'Spanish',
-    'fr': 'French',
-    'de': 'German',
-    'it': 'Italian',
-    'pt': 'Portuguese',
-    'hi': 'Hindi',
-    'ja': 'Japanese',
-    'ko': 'Korean',
-    'zh-cn': 'Chinese',
+  Map<String, Map<String, String>> get _languages => {
+    'es': {'name': 'Spanish', 'ttsCode': 'es-MX'},
+    'fr': {'name': 'French', 'ttsCode': 'fr-FR'},
+    'de': {'name': 'German', 'ttsCode': 'de-DE'},
+    'it': {'name': 'Italian', 'ttsCode': 'it-IT'},
+    'pt': {'name': 'Portuguese', 'ttsCode': 'pt-BR'},
+    'hi': {'name': 'Hindi', 'ttsCode': 'hi-IN'},
+    'ja': {'name': 'Japanese', 'ttsCode': 'ja-JP'},
+    'ko': {'name': 'Korean', 'ttsCode': 'ko-KR'},
+    'zh-cn': {'name': 'Chinese', 'ttsCode': 'zh-CN'},
   };
 
   bool _speechEnabled = false;
@@ -62,9 +62,15 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _initSpeechAndTTS() async {
     try {
-      // Initialize TTS
+      // Initialize TTS with more settings
       await _flutterTts.setLanguage('en-US');
+      await _flutterTts.setPitch(1.0);
       await _flutterTts.setSpeechRate(0.5);
+      await _flutterTts.setVolume(1.0);
+      
+      // Get available languages
+      final languages = await _flutterTts.getLanguages;
+      print('Available TTS languages: $languages');
       
       // Initialize speech recognition
       bool available = await _speechToText.initialize(
@@ -84,7 +90,7 @@ class _HomeScreenState extends State<HomeScreen> {
       print('Speech recognition available: $available');
     } catch (e) {
       print('Initialization error: $e');
-      Get.snackbar('Error', 'Failed to initialize speech recognition');
+      Get.snackbar('Error', 'Failed to initialize: $e');
     }
   }
 
@@ -94,6 +100,7 @@ class _HomeScreenState extends State<HomeScreen> {
     _faceDetector.close();
     _textRecognizer.close();
     _flutterTts.stop();
+    _speechToText.cancel();
     super.dispose();
   }
 
@@ -180,31 +187,31 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
 
       // Add FAB for quick voice input
-      floatingActionButton: Obx(() => GestureDetector(
-        onTapDown: (_) => _startListening(),
-        onTapUp: (_) => _stopListening(),
-        onTapCancel: () => _stopListening(),
-        child: Container(
-          width: 60,
-          height: 60,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: _isListening.value ? Colors.red : Theme.of(context).primaryColor,
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.2),
-                blurRadius: 6,
-                offset: const Offset(0, 3),
-              ),
-            ],
-          ),
-          child: Icon(
-            _isListening.value ? Icons.mic : Icons.mic_none,
-            color: Colors.white,
-            size: 30,
-          ),
-        ),
-      )),
+      // floatingActionButton: Obx(() => GestureDetector(
+      //   onTapDown: (_) => _startListening(),
+      //   onTapUp: (_) => _stopListening(),
+      //   onTapCancel: () => _stopListening(),
+      //   child: Container(
+      //     width: 60,
+      //     height: 60,
+      //     decoration: BoxDecoration(
+      //       shape: BoxShape.circle,
+      //       color: _isListening.value ? Colors.red : Theme.of(context).primaryColor,
+      //       boxShadow: [
+      //         BoxShadow(
+      //           color: Colors.black.withOpacity(0.2),
+      //           blurRadius: 6,
+      //           offset: const Offset(0, 3),
+      //         ),
+      //       ],
+      //     ),
+      //     child: Icon(
+      //       _isListening.value ? Icons.mic : Icons.mic_none,
+      //       color: Colors.white,
+      //       size: 30,
+      //     ),
+      //   ),
+      // )),
     );
   }
 
@@ -338,12 +345,23 @@ class _HomeScreenState extends State<HomeScreen> {
                   isExpanded: true,
                   underline: const SizedBox(),
                   items: _languages.entries.map((entry) {
-                    return DropdownMenuItem(
+                    return DropdownMenuItem<String>(
                       value: entry.key,
-                      child: Text(entry.value),
+                      child: Text(_languages[entry.key]?['name'] ?? ''),
                     );
                   }).toList(),
-                  onChanged: (value) => _selectedLanguage.value = value!,
+                  onChanged: (value) {
+                    if (value != null) {
+                      _selectedLanguage.value = value;
+                      // Retranslate if there's existing text
+                      if (_aiResponse.value.contains('Original:')) {
+                        final originalText = _aiResponse.value
+                            .split('\n\n')[0]
+                            .replaceAll('Original: ', '');
+                        _handleSpeechResult(originalText);
+                      }
+                    }
+                  },
                 ),
               ),
 
@@ -420,11 +438,13 @@ class _HomeScreenState extends State<HomeScreen> {
                             ),
                             IconButton(
                               icon: const Icon(Icons.volume_up),
-                              onPressed: () {
+                              onPressed: () async {
                                 final translatedText = _aiResponse.value
                                     .split('\n\n')[1]
-                                    .replaceAll('Translated: ', '');
-                                _speakText(translatedText, _selectedLanguage.value);
+                                    .replaceAll('Translated: ', '')
+                                    .trim();
+                                print('Speaking translated text: $translatedText');
+                                await _speakText(translatedText, _selectedLanguage.value);
                               },
                             ),
                           ],
@@ -542,18 +562,28 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _speakText(String text, String languageCode) async {
     try {
-      await _flutterTts.setLanguage(languageCode);
+      print('Speaking text: $text in language: $languageCode');
+      
+      // Stop any ongoing speech
+      await _flutterTts.stop();
+      
+      // Get the correct TTS code
+      final ttsCode = _languages[languageCode]?['ttsCode'] ?? 'en-US';
+      print('Using TTS code: $ttsCode');
+      
+      // Configure TTS
+      await _flutterTts.setLanguage(ttsCode);
       await _flutterTts.setPitch(1.0);
       await _flutterTts.setSpeechRate(0.5);
       await _flutterTts.setVolume(1.0);
+
+      // Speak the text
+      final result = await _flutterTts.speak(text);
+      print('Speak result: $result');
       
-      var result = await _flutterTts.speak(text);
-      print('TTS Result: $result');
-      
-      if (result == 1) {
-        print('Speaking started successfully');
-      } else {
-        print('Failed to start speaking');
+      if (result == null || result == 0) {
+        print('Failed to speak');
+        Get.snackbar('Error', 'Failed to speak text');
       }
     } catch (e) {
       print('TTS error: $e');
