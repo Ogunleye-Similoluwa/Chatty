@@ -5,48 +5,42 @@ import '../screen/feature/chatbot_feature.dart';
 import '../screen/feature/image_feature.dart';
 import '../screen/feature/translator_feature.dart';
 
-enum HomeType { aiChatBot, aiImage, aiTranslator }
+enum HomeType { 
+  aiChatBot, 
+  aiImage, 
+  aiTranslator,
+  imageAnalysis,
+  faceDetection,
+  textScanner,
+  voiceTranslator
+}
 
-extension MyHomeType on HomeType {
-  //title
-  String get title => switch (this) {
-        HomeType.aiChatBot => 'AI ChatBot',
-        HomeType.aiImage => 'AI Image Creator',
-        HomeType.aiTranslator => 'Language Translator',
-      };
+extension HomeTypeExtension on HomeType {
+  String get name => switch (this) {
+    HomeType.aiChatBot => 'AI ChatBot',
+    HomeType.aiImage => 'AI Art',
+    HomeType.aiTranslator => 'AI Translator',
+    HomeType.imageAnalysis => 'Image Analysis',
+    HomeType.faceDetection => 'Face Detection',
+    HomeType.textScanner => 'Text Scanner',
+    HomeType.voiceTranslator => 'Voice Translator',
+  };
 
-  //lottie
   String get lottie => switch (this) {
-        HomeType.aiChatBot => 'assets/lottie/animation1.json',
-        HomeType.aiImage => 'assets/lottie/animation2.json',
-        HomeType.aiTranslator => 'assets/lottie/animation3.json',
-      };
+    HomeType.aiChatBot => 'assets/lottie/animation1.json',
+    HomeType.aiImage => 'assets/lottie/animation2.json',
+    HomeType.aiTranslator => 'assets/lottie/animation3.json',
+    HomeType.imageAnalysis => 'assets/lottie/animation4.json',
+    HomeType.faceDetection => 'assets/lottie/animation9.json',
+    HomeType.textScanner => 'assets/lottie/animation7.json',
+    HomeType.voiceTranslator => 'assets/lottie/animation8.json',
+  };
 
-  //for alignment
-  bool get leftAlign => switch (this) {
-        HomeType.aiChatBot => true,
-        HomeType.aiImage => false,
-        HomeType.aiTranslator => true,
-      };
-
-  //for padding
-  EdgeInsets get padding => switch (this) {
-        HomeType.aiChatBot => EdgeInsets.zero,
-        HomeType.aiImage => const EdgeInsets.all(20),
-        HomeType.aiTranslator => EdgeInsets.zero,
-      };
-
-
-  //for navigation
-  VoidCallback get onTap => switch (this) {
-        HomeType.aiChatBot => () => Get.to(() => const ChatBotFeature()),
-        HomeType.aiImage => () => Get.to(() => const ImageFeature()),
-        HomeType.aiTranslator => () => Get.to(() => const TranslatorFeature()),
-      };
-
-  String get fallbackAnimation => switch (this) {
-        HomeType.aiChatBot => 'assets/rive/fallback/chatbot.riv',
-        HomeType.aiImage => 'assets/rive/fallback/art.riv',
-        HomeType.aiTranslator => 'assets/rive/fallback/translate.riv',
-      };
+  // Add default navigation
+  VoidCallback get defaultNavigation => switch (this) {
+    HomeType.aiChatBot => () => Get.to(() => const ChatBotFeature()),
+    HomeType.aiImage => () => Get.to(() => const ImageFeature()),
+    HomeType.aiTranslator => () => Get.to(() => const TranslatorFeature()),
+    _ => () {}, // Default empty callback for other types
+  };
 }

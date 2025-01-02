@@ -62,16 +62,27 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _initSpeechAndTTS() async {
     try {
-      // Initialize TTS with more settings
-      await _flutterTts.setLanguage('en-US');
+      // Initialize TTS with platform-specific settings
+      await _flutterTts.setIosAudioCategory(
+        IosTextToSpeechAudioCategory.ambient,
+        [
+          IosTextToSpeechAudioCategoryOptions.allowBluetooth,
+          IosTextToSpeechAudioCategoryOptions.allowBluetoothA2DP,
+          IosTextToSpeechAudioCategoryOptions.mixWithOthers,
+        ],
+      );
+
+      await _flutterTts.awaitSpeakCompletion(true);
+      await _flutterTts.setVolume(1.0);
       await _flutterTts.setPitch(1.0);
       await _flutterTts.setSpeechRate(0.5);
-      await _flutterTts.setVolume(1.0);
-      
-      // Get available languages
+
+      // Print available languages and voices
       final languages = await _flutterTts.getLanguages;
+      final voices = await _flutterTts.getVoices;
       print('Available TTS languages: $languages');
-      
+      print('Available TTS voices: $voices');
+
       // Initialize speech recognition
       bool available = await _speechToText.initialize(
         onStatus: (String status) {
@@ -89,8 +100,8 @@ class _HomeScreenState extends State<HomeScreen> {
       
       print('Speech recognition available: $available');
     } catch (e) {
-      print('Initialization error: $e');
-      Get.snackbar('Error', 'Failed to initialize: $e');
+      print('TTS Initialization error: $e');
+      Get.snackbar('Error', 'Failed to initialize TTS: $e');
     }
   }
 
@@ -107,15 +118,39 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text('Chatty'),
+        elevation: 0,
+        backgroundColor: Colors.transparent,
+        title: Text(
+          'Chatty',
+          style: TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+            color: Theme.of(context).brightness == Brightness.dark 
+              ? Colors.white 
+              : Theme.of(context).primaryColor,
+          ),
+        ),
         actions: [
-          IconButton(
-            icon: Icon(_isDarkMode.value ? Icons.light_mode : Icons.dark_mode),
-            onPressed: () {
-              _isDarkMode.value = !_isDarkMode.value;
-              Get.changeThemeMode(_isDarkMode.value ? ThemeMode.dark : ThemeMode.light);
-            },
+          Container(
+            margin: const EdgeInsets.only(right: 8),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: Theme.of(context).primaryColor.withOpacity(0.1),
+            ),
+            child: IconButton(
+              icon: Icon(
+                _isDarkMode.value ? Icons.light_mode : Icons.dark_mode,
+                color: Theme.of(context).brightness == Brightness.dark 
+                  ? Colors.white 
+                  : Theme.of(context).primaryColor,
+              ),
+              onPressed: () {
+                _isDarkMode.value = !_isDarkMode.value;
+                Get.changeThemeMode(_isDarkMode.value ? ThemeMode.dark : ThemeMode.light);
+              },
+            ),
           ),
         ],
       ),
@@ -123,129 +158,74 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           // Main Feature Cards
           Expanded(
-            child: ListView(
+            child: GridView.builder(
               padding: const EdgeInsets.all(16),
-              children: [
-                HomeCard(homeType: HomeType.aiChatBot),
-                HomeCard(homeType: HomeType.aiImage),
-                HomeCard(homeType: HomeType.aiTranslator),
-                
-                const SizedBox(height: 20),
-                
-                // Additional Features Grid
-                GridView.count(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  crossAxisCount: 2,
-                  mainAxisSpacing: 16,
-                  crossAxisSpacing: 16,
-                  children: [
-                    _buildFeatureCard(
-                      'Image Analysis',
-                      'assets/lottie/animation4.json',
-                      _processImage,
-                    ),
-                    _buildFeatureCard(
-                      'Face Detection',
-                      'assets/lottie/animation9.json',
-                      _detectFaces,
-                    ),
-                    _buildFeatureCard(
-                      'Text Scanner',
-                      'assets/lottie/animation7.json',
-                      _scanText,
-                    ),
-                  ],
-                ),
-
-                // Add Speech Recognition Card
-                _buildFeatureCard(
-                  'Voice Translator',
-                  'assets/lottie/animation8.json',
-                  _showVoiceTranslatorDialog,
-                ),
-              ],
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                childAspectRatio: 0.85,
+                crossAxisSpacing: 16,
+                mainAxisSpacing: 16,
+              ),
+              itemCount: 7,
+              itemBuilder: (context, index) {
+                final features = [
+                  HomeCard(
+                    homeType: HomeType.aiChatBot,
+                    onTap: HomeType.aiChatBot.defaultNavigation,
+                  ),
+                  HomeCard(
+                    homeType: HomeType.aiImage,
+                    onTap: HomeType.aiImage.defaultNavigation,
+                  ),
+                  HomeCard(
+                    homeType: HomeType.aiTranslator,
+                    onTap: HomeType.aiTranslator.defaultNavigation,
+                  ),
+                  HomeCard(homeType: HomeType.imageAnalysis, onTap: _processImage),
+                  HomeCard(homeType: HomeType.faceDetection, onTap: _detectFaces),
+                  HomeCard(homeType: HomeType.textScanner, onTap: _scanText),
+                  HomeCard(homeType: HomeType.voiceTranslator, onTap: _showVoiceTranslatorDialog),
+                ];
+                return features[index];
+              },
             ),
           ),
-          
+
           // Response Area
           Obx(() => _isProcessing.value 
-            ? const Center(child: CircularProgressIndicator())
+            ? const Center(
+                child: CircularProgressIndicator(),
+              )
             : _aiResponse.value.isNotEmpty
               ? Container(
                   padding: const EdgeInsets.all(16),
                   margin: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     color: Theme.of(context).cardColor,
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(15),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.05),
+                        blurRadius: 10,
+                        offset: const Offset(0, 5),
+                      ),
+                    ],
                   ),
-                  child: Text(_aiResponse.value),
+                  child: Text(
+                    _aiResponse.value,
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Theme.of(context).brightness == Brightness.dark 
+                        ? Colors.white 
+                        : Theme.of(context).textTheme.bodyLarge?.color,
+                    ),
+                  ),
                 )
               : const SizedBox.shrink()
           ),
         ],
       ),
-
-      // Add FAB for quick voice input
-      // floatingActionButton: Obx(() => GestureDetector(
-      //   onTapDown: (_) => _startListening(),
-      //   onTapUp: (_) => _stopListening(),
-      //   onTapCancel: () => _stopListening(),
-      //   child: Container(
-      //     width: 60,
-      //     height: 60,
-      //     decoration: BoxDecoration(
-      //       shape: BoxShape.circle,
-      //       color: _isListening.value ? Colors.red : Theme.of(context).primaryColor,
-      //       boxShadow: [
-      //         BoxShadow(
-      //           color: Colors.black.withOpacity(0.2),
-      //           blurRadius: 6,
-      //           offset: const Offset(0, 3),
-      //         ),
-      //       ],
-      //     ),
-      //     child: Icon(
-      //       _isListening.value ? Icons.mic : Icons.mic_none,
-      //       color: Colors.white,
-      //       size: 30,
-      //     ),
-      //   ),
-      // )),
     );
-  }
-
-  Widget _buildFeatureCard(String title, String animation, VoidCallback onTap) {
-    return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Lottie.asset(
-                animation,
-                height: 80,
-                width: 80,
-                fit: BoxFit.contain,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                title,
-                textAlign: TextAlign.center,
-                style: const TextStyle(fontWeight: FontWeight.bold),
-              ),
-            ],
-          ),
-        ),
-      ),
-    ).animate()
-      .fadeIn(duration: const Duration(milliseconds: 500))
-      .slideY(begin: 0.2, duration: const Duration(milliseconds: 500));
   }
 
   Future<void> _processImage() async {
@@ -564,25 +544,35 @@ class _HomeScreenState extends State<HomeScreen> {
     try {
       print('Speaking text: $text in language: $languageCode');
       
-      // Stop any ongoing speech
       await _flutterTts.stop();
       
       // Get the correct TTS code
       final ttsCode = _languages[languageCode]?['ttsCode'] ?? 'en-US';
       print('Using TTS code: $ttsCode');
-      
-      // Configure TTS
-      await _flutterTts.setLanguage(ttsCode);
-      await _flutterTts.setPitch(1.0);
-      await _flutterTts.setSpeechRate(0.5);
-      await _flutterTts.setVolume(1.0);
 
-      // Speak the text
+      // Configure TTS with maximum volume
+      await _flutterTts.setVolume(1.0);       // Maximum volume
+      await _flutterTts.setPitch(1.0);        // Slightly higher pitch for clarity
+      await _flutterTts.setSpeechRate(0.4);   // Slower rate for better understanding
+      await _flutterTts.setLanguage(ttsCode);
+      
+      // Set platform-specific options
+      if (Platform.isIOS) {
+        await _flutterTts.setSharedInstance(true);
+        await _flutterTts.setIosAudioCategory(
+          IosTextToSpeechAudioCategory.playback,
+          [
+            IosTextToSpeechAudioCategoryOptions.defaultToSpeaker,
+            IosTextToSpeechAudioCategoryOptions.mixWithOthers,
+          ],
+        );
+      }
+
+      // Speak with maximum volume
       final result = await _flutterTts.speak(text);
       print('Speak result: $result');
-      
-      if (result == null || result == 0) {
-        print('Failed to speak');
+
+      if (result == 0) {
         Get.snackbar('Error', 'Failed to speak text');
       }
     } catch (e) {
