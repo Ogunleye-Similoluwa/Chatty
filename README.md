@@ -1,71 +1,127 @@
-# Chatty App
+# Chatty App 🤖
 
 A powerful Flutter application that integrates various AI capabilities including speech recognition, image processing, text translation, and more.
 
-## Features
+![App Banner](screenshots/banner.png)
 
-### Voice Interaction
-- 🎤 Speech-to-Text conversion
-- 🔊 Text-to-Speech output
-- 🗣️ Voice command processing
-- 📝 Command history tracking
+## 📱 Screenshots
 
-### Image Processing
-- 🖼️ Image Analysis with ML Kit
-- 👤 Face Detection with expression analysis
-- 📷 OCR (Optical Character Recognition)
-- 🏷️ Object labeling and detection
+<p float="left">
+  <img src="screenshots/home_light.png" width="200" />
+  <img src="screenshots/home_dark.png" width="200" /> 
+  <img src="screenshots/chat.png" width="200" />
+  <img src="screenshots/image_gen.png" width="200" />
+</p>
 
-### Language Features
-- 🌍 Multi-language translation
-- 🔄 Real-time language detection
-- 💬 Support for multiple languages
-- 🗣️ Voice output in different languages
+<p float="left">
+  <img src="screenshots/translate.png" width="200" />
+  <img src="screenshots/voice.png" width="200" />
+  <img src="screenshots/face_detect.png" width="200" />
+  <img src="screenshots/text_scan.png" width="200" />
+</p>
 
-### UI Features
-- 🌓 Dark/Light theme support
-- ⚡ Smooth animations
-- 🎨 Modern, clean interface
-- 📱 Responsive design
-- 🔄 Pull-to-refresh functionality
+## ✨ Features
 
-## Getting Started
+### 🤖 AI Chat
+- Smart conversational AI powered by Google Gemini
+- Context-aware responses
+- Code explanation and generation
+- Natural language processing
+
+### 🎨 AI Image Generation
+- Create custom images from text descriptions
+- Multiple style options
+- High-resolution output
+- Image history and gallery
+
+### 🗣️ Voice Interaction
+- Speech-to-Text conversion
+- Text-to-Speech output
+- Voice command processing
+- Multi-language voice support
+
+### 📸 Image Processing
+- Image Analysis with ML Kit
+- Face Detection with expression analysis
+- OCR (Optical Character Recognition)
+- Object labeling and detection
+
+### 🌍 Language Features
+- Multi-language translation
+- Real-time language detection
+- Support for 10+ languages
+- Voice output in different languages
+
+### 🎯 UI/UX Features
+- Material 3 Design
+- Dark/Light theme support
+- Smooth animations
+- Responsive layout
+- Intuitive navigation
+- Pull-to-refresh functionality
+
+## 🚀 Getting Started
 
 ### Prerequisites
-- Flutter SDK (>=3.4.3)
+- Flutter SDK (>=3.2.0)
 - Dart SDK (>=3.0.0)
-- iOS 12.0 or higher (for iOS)
-- Android 5.0 (API 21) or higher (for Android)
+- iOS 12.0 or higher
+- Android 5.0 (API 21) or higher
+
 
 
 ## Usage
 
-### Voice Commands
-1. Tap the microphone button
-2. Speak your command
-3. Wait for AI processing
-4. View or listen to the response
+### AI Chat
+- Open the ChatBot feature
+- Type or speak your question
+- Get instant AI-powered responses
+- Copy or share responses
 
-### Image Analysis
-1. Select "Image Analysis" from the grid
-2. Choose an image from gallery
-3. View detailed analysis results
+### Image Generation
+- Select "AI Art" from home
+- Describe your desired image
+- Click "Create Magic"
+- Save or share generated images
 
 ### Translation
-1. Select "Translation" from the grid
-2. Choose target language
-3. Speak or type text
-4. View translation results
+- Choose source and target languages
+- Enter or speak text
+- Get instant translations
+- Listen to translated audio
+
+### Voice Commands
+- Tap microphone button
+- Speak naturally
+- View real-time transcription
+- Get AI-powered responses
+
+## 🛠️ Technical Details
+
+### Architecture
+- GetX for state management
+- Clean architecture principles
+- Modular design
+- Reactive programming
+
+### APIs & SDKs
+- Google ML Kit
+- Google Gemini AI
+- Flutter TTS
+- Speech Recognition
+- Image Processing
 
 
 
-## License
+## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details
 
-## Acknowledgments
+## 🙏 Acknowledgments
 
 - Google ML Kit for AI capabilities
-- Flutter team for the amazing framework
+- Flutter team for the framework
 - LottieFiles for animations
 - All contributors and supporters
+
+
